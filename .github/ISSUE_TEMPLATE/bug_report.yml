@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in the Performance panel isn't working right
+labels: [bug]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Laptop model
+      description: e.g. Acer Predator Helios Neo 16 (PHN16-71), or a different Acer/Intel laptop
+      placeholder: Acer Predator Helios Neo 16 (PHN16-71)
+    validations:
+      required: true
+
+  - type: input
+    id: cpu
+    attributes:
+      label: CPU
+      placeholder: Intel i5-13500HX
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you click, what did you expect, what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        Run this and paste the output:
+        journalctl --user -t omarchy-shell --since "-10 min" | grep -i rezwoan
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checked first
+      options:
+        - label: I ran `omarchy restart shell` before concluding this is a real bug (not a stale hot-reload)
+        - label: I confirmed the helper is installed (the panel doesn't show the "Enable privileged controls" banner) if this is about a control not applying

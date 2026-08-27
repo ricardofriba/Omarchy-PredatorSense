@@ -1,0 +1,22 @@
+name: Feature request
+description: A control or capability this plugin doesn't have yet
+labels: [enhancement]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Laptop model (if hardware-specific)
+      placeholder: Acer Predator Helios Neo 16 (PHN16-71)
+
+  - type: textarea
+    id: request
+    attributes:
+      label: What do you want it to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Why / how do you use this today
+      description: e.g. a script you run manually, a Windows PredatorSense feature with no Linux equivalent yet, a sysfs path you already found
