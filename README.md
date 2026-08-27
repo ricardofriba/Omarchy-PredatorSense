@@ -67,6 +67,8 @@ one password prompt. No manual `modprobe`/blacklist editing.
 - Battery: live percentage/status, 80% charge-limit toggle, fan speed
 - Session restore: reopens your open windows on next login
 
+![CPU, GPU, battery, and fan controls](assets/screenshot-general-gpu-battery.png)
+
 **Keyboard tab** (4-zone RGB)
 - Brightness (5 steps), 9 static colors, 7 animated effects (Breathing / Neon / Wave /
   Shifting / Zoom / Meteor / Twinkling), match-current-theme, off
