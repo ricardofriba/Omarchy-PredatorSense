@@ -26,7 +26,7 @@ same name.
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/Rezwoan/omarchy-predator-performance.git --enable --yes
+omarchy plugin add https://github.com/Rezwoan/Omarchy-PredatorSense.git --enable --yes
 ```
 
 That's it — **no terminal, no sudo, nothing else to run.** The panel works immediately in
