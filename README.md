@@ -11,6 +11,11 @@ verified working end to end on that exact model before this was published.
 
 ![General tab](assets/screenshot-general.png)
 
+> This is an independent, unofficial project — not affiliated with, endorsed by, or
+> supported by Acer Inc. "Predator" and the Predator logo are trademarks of Acer Inc.,
+> used here only to identify the hardware this plugin targets. See
+> [NOTICE.md](NOTICE.md).
+
 ## Why
 
 Windows has PredatorSense. Omarchy didn't have anything, so this ports the useful parts of it —
