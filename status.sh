@@ -89,7 +89,7 @@ theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors
 [[ -z $theme_hex ]] && theme_hex="ffffff"
 
 # Privileged writes go through pkexec + a polkit action scoped to this exact
-# binary (see setup.sh) — no NOPASSWD sudoers rule, so there's nothing to
+# binary (see setup.sh) — no passwordless-sudo rule, so there's nothing to
 # probe non-interactively. Existence is the readiness signal: this file only
 # exists once our own setup.sh has installed it.
 helper_ok=false

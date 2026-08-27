@@ -4,7 +4,7 @@
 # controls" button) — you should never need to open a terminal for this.
 #
 # Installs a root-owned, verb-whitelisted helper plus a polkit action scoped
-# to that one binary. No sudoers file, no NOPASSWD rule: every privileged
+# to that one binary. No sudoers file, no passwordless-sudo rule: every privileged
 # click goes through `pkexec`, which prompts via the normal graphical
 # authentication dialog. polkit's `auth_admin_keep` on the registered action
 # means you authenticate once and it's remembered for a few minutes, not on
