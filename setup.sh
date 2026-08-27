@@ -16,13 +16,6 @@ set -euo pipefail
 HELPER=/usr/local/bin/omarchy-perf-helper
 ACTION_ID=io.github.rezwoan.performance.helper
 
-# Migration: an earlier version of this plugin used a NOPASSWD sudoers rule
-# instead of polkit. Remove it if present — polkit replaces it entirely.
-if [[ -f /etc/sudoers.d/omarchy-perf ]]; then
-  rm -f /etc/sudoers.d/omarchy-perf
-  echo "==> Removed the old /etc/sudoers.d/omarchy-perf NOPASSWD rule (superseded by polkit)"
-fi
-
 install -d /usr/local/bin
 cat > "$HELPER" <<'HELPER'
 #!/bin/bash
