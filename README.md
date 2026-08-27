@@ -1,4 +1,4 @@
-# Performance — for Acer Predator laptops
+# PredatorSense — for Acer Predator laptops
 
 An [Omarchy](https://omarchy.org/) `omarchy-shell` plugin: a real power/CPU/GPU/battery/keyboard
 control center in your bar, built specifically for **Acer Predator** laptops (and useful, minus
@@ -18,9 +18,10 @@ verified working end to end on that exact model before this was published.
 
 ## Why
 
-Windows has PredatorSense. Omarchy didn't have anything, so this ports the useful parts of it —
-plus a few things PredatorSense doesn't even do (CPU core-count control, RAPL power-limit
-presets) — into a proper bar widget that matches your theme.
+Windows has Acer's own PredatorSense app. Omarchy didn't have anything, so this ports the
+useful parts of it — plus a few things the original doesn't even do (CPU core-count control,
+RAPL power-limit presets) — into a proper bar widget that matches your theme, under the
+same name.
 
 ## Install
 
@@ -65,7 +66,6 @@ one password prompt. No manual `modprobe`/blacklist editing.
   RAPL package power limit
 - GPU: mode switching (needs `envycontrol`), Nvidia dynamic-boost toggle
 - Battery: live percentage/status, 80% charge-limit toggle, fan speed
-- Session restore: reopens your open windows on next login
 
 ![CPU, GPU, battery, and fan controls](assets/screenshot-general-gpu-battery.png)
 

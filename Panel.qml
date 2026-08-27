@@ -7,16 +7,16 @@ import qs.Ui
 import qs.Commons
 import "Model.js" as Model
 
-// Performance control center for the Acer Predator laptop: power presets,
-// CPU/GPU/fan/battery/keyboard-RGB controls, and session restore. Ported
-// from an old walker-menu extension (omarchy/extensions/menu.sh) into a
-// proper bar-widget plugin for the omarchy-shell era.
+// PredatorSense control center for the Acer Predator laptop: power presets,
+// CPU/GPU/fan/battery/keyboard-RGB controls. Ported from an old walker-menu
+// extension (omarchy/extensions/menu.sh) into a proper bar-widget plugin for
+// the omarchy-shell era.
 //
 // Privileged writes go through /usr/local/bin/omarchy-perf-helper, a
 // root-owned, verb-whitelisted script authorized via a polkit action scoped
 // to that exact binary (see setup.sh and README.md) — no sudoers file, no
-// NOPASSWD rule. Every control here degrades gracefully when that helper —
-// or the optional envycontrol / linuwu-sense-dkms backends — isn't
+// passwordless-sudo rule. Every control here degrades gracefully when that
+// helper — or the optional envycontrol / linuwu-sense-dkms backends — isn't
 // installed: read-only status still shows, writes just no-op.
 Panel {
   id: root
@@ -50,7 +50,7 @@ Panel {
   // exec every bar widget uses. pkexec matches the helper's exact path
   // against the polkit action installed by setup.sh, so this prompts via the
   // normal graphical auth dialog (once per auth_admin_keep window, not per
-  // click) rather than needing a NOPASSWD sudo rule. If setup.sh hasn't run
+  // click) rather than needing a passwordless-sudo rule. If setup.sh hasn't run
   // yet, pkexec still prompts (via the generic exec action) rather than
   // silently failing — the setup banner's own button is the one-time
   // exception that installs the helper in the first place.
@@ -72,14 +72,14 @@ Panel {
   // through the same graphical dialog.
   function runSetup() {
     root.bar.run("pkexec bash " + Util.shellQuote(root.pluginDir + "/setup.sh")
-      + " && omarchy-notification-send -u low " + Util.shellQuote("Performance")
+      + " && omarchy-notification-send -u low " + Util.shellQuote("PredatorSense")
       + " " + Util.shellQuote("Privileged controls enabled"))
     refreshTimer.restart()
   }
 
   function runEnableKeyboard() {
     root.bar.run("pkexec bash " + Util.shellQuote(root.pluginDir + "/enable-keyboard.sh")
-      + " && omarchy-notification-send -u low " + Util.shellQuote("Performance")
+      + " && omarchy-notification-send -u low " + Util.shellQuote("PredatorSense")
       + " " + Util.shellQuote("Keyboard RGB driver loaded"))
     refreshTimer.restart()
   }
@@ -118,15 +118,6 @@ Panel {
   function setKbEffect(mode) { runPrivileged("kb-effect", mode, "5", "100", "1", root.status.themeHex) }
   function matchKbTheme() { runPrivileged("kb-zone", root.status.themeHex, "100") }
   function turnKbOff() { runPrivileged("kb-bright", "0") }
-
-  function toggleSession() {
-    var flag = "$HOME/.config/omarchy/session-restore.enabled"
-    if (root.status.session === "on") {
-      runPlain("rm -f " + flag + " && systemctl --user disable --now omarchy-perf-session-save.timer")
-    } else {
-      runPlain("touch " + flag + " && systemctl --user enable --now omarchy-perf-session-save.timer && $HOME/.local/bin/omarchy-perf-session-save")
-    }
-  }
 
   function openLiveGpuStats() {
     root.bar.run("uwsm-app -- xdg-terminal-exec watch -n1 nvidia-smi")
@@ -171,7 +162,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     iconComponent: predatorLogoComponent
-    tooltipText: root.status.preset ? Model.presetLabel(root.status.preset) : "Performance"
+    tooltipText: root.status.preset ? Model.presetLabel(root.status.preset) : "PredatorSense"
     onPressed: function(b) { root.toggle() }
   }
 
@@ -263,7 +254,7 @@ Panel {
               spacing: Style.space(2)
 
               Text {
-                text: "Performance"
+                text: "PredatorSense"
                 color: root.bar.foreground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -684,26 +675,6 @@ Panel {
                 ]
                 onChanged: function(v) { root.setFan(v) }
               }
-            }
-          }
-
-          PanelSeparator { foreground: root.bar.foreground }
-
-          // ---------- Session ----------
-          Column {
-            width: parent.width
-            spacing: Style.space(8)
-
-            PanelSectionHeader { text: "SESSION"; foreground: root.bar.foreground; fontFamily: root.bar.fontFamily }
-
-            Toggle {
-              width: parent.width
-              label: "Restore apps on login"
-              description: "Snapshots open windows every minute and reopens them next login"
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
-              checked: root.status.session === "on"
-              onClicked: root.toggleSession()
             }
           }
 

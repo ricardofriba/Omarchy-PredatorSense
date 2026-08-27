@@ -82,9 +82,6 @@ battstatus="$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)"
 
 preset="$(cat /var/lib/omarchy-perf/profile 2>/dev/null || echo "")"
 
-session="off"
-[[ -f "$HOME/.config/omarchy/session-restore.enabled" ]] && session=on
-
 theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors.toml" 2>/dev/null | grep -oiE '[0-9a-f]{6}' | head -1)"
 [[ -z $theme_hex ]] && theme_hex="ffffff"
 
@@ -95,5 +92,5 @@ theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors
 helper_ok=false
 [[ -x /usr/local/bin/omarchy-perf-helper && -f /usr/share/polkit-1/actions/io.github.rezwoan.performance.helper.policy ]] && helper_ok=true
 
-printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","session":"%s","themeHex":"%s","helperOk":%s}\n' \
-  "$profile" "$turbo" "$thermal" "$thermal_choices" "$cpucap" "$cores" "$powerlimit" "$gpu" "$gpu_available" "$powerd" "$battlimit" "$fan" "$kb_available" "$kb_pkg_installed" "${battpct:-}" "${battstatus:-}" "$preset" "$session" "$theme_hex" "$helper_ok"
+printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","themeHex":"%s","helperOk":%s}\n' \
+  "$profile" "$turbo" "$thermal" "$thermal_choices" "$cpucap" "$cores" "$powerlimit" "$gpu" "$gpu_available" "$powerd" "$battlimit" "$fan" "$kb_available" "$kb_pkg_installed" "${battpct:-}" "${battstatus:-}" "$preset" "$theme_hex" "$helper_ok"

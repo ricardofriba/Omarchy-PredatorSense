@@ -6,7 +6,7 @@ function parseStatus(text) {
     profile: "unknown", turbo: "n/a", thermal: "n/a", thermalChoices: "",
     cpucap: "", cores: "all", powerlimit: "", gpu: "n/a", gpuAvailable: false,
     powerd: "inactive", battlimit: "n/a", fan: "n/a", kbAvailable: false, kbPkgInstalled: false,
-    battpct: "", battstatus: "", preset: "", session: "off", themeHex: "ffffff",
+    battpct: "", battstatus: "", preset: "", themeHex: "ffffff",
     helperOk: false
   }
   try {
