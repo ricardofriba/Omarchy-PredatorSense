@@ -5,9 +5,9 @@ control center in your bar, built specifically for **Acer Predator** laptops (an
 the Acer-only bits, on any Intel `intel_pstate` + RAPL laptop).
 
 **Tested on: Acer Predator Helios Neo 16 (PHN16-71), Intel i5-13500HX, NVIDIA RTX 4050.**
-Every control below — power presets, CPU turbo/cores/frequency/power-limit, thermal profile,
-GPU mode switching, 80% battery charge limit, fan speed, and all four keyboard-RGB modes — was
-verified working end to end on that exact model before this was published.
+Every control below — the Profile selector, CPU turbo/cores/frequency/power-limit, thermal
+profile, GPU mode switching, 80% battery charge limit, fan speed, and all keyboard-RGB modes —
+was verified working end to end on that exact model before this was published.
 
 ![General tab](assets/screenshot-general.png)
 
@@ -57,21 +57,28 @@ one password prompt. No manual `modprobe`/blacklist editing.
 ## What it does
 
 **General tab**
-- One-tap **Power Presets** — Ultra Saver / Balanced / Performance — each bundling CPU cores,
-  turbo, frequency cap, RAPL power limit, thermal profile, keyboard color, and screen
-  brightness. Persisted and silently reapplied on every boot.
-- Power profile (power-profiles-daemon), thermal profile (every `platform_profile` your
-  firmware exposes, not a hardcoded list)
+- One unified **Profile** selector — Ultra Saver / Saver / Balanced / Performance / Ultra
+  Performance / Custom — each named preset bundling CPU cores, turbo, frequency cap, RAPL power
+  limit, thermal profile, fan, keyboard color, and screen brightness. Persisted and silently
+  reapplied on every boot. Custom isn't a real preset — it's a passive indicator that lights up
+  whenever a raw control below (or in the Advanced popover) has been hand-tuned since the last
+  named preset was applied.
+- **Advanced** (small gear ⚙ button next to the GPU-stats/battery-info icons): the raw power
+  profile (power-profiles-daemon) and thermal profile (every `platform_profile` your firmware
+  exposes, not a hardcoded list) controls, for manual overrides outside the named presets.
 - CPU: turbo boost, core mode (all / no hyperthreading / E-cores only), max frequency cap,
   RAPL package power limit
-- GPU: mode switching (needs `envycontrol`), Nvidia dynamic-boost toggle
+- GPU: mode switching (needs `envycontrol`, reboot required), Nvidia dynamic-boost toggle
 - Battery: live percentage/status, 80% charge-limit toggle, fan speed
 
 ![CPU, GPU, battery, and fan controls](assets/screenshot-general-gpu-battery.png)
 
 **Keyboard tab** (4-zone RGB)
-- Brightness (5 steps), 9 static colors, 7 animated effects (Breathing / Neon / Wave /
-  Shifting / Zoom / Meteor / Twinkling), match-current-theme, off
+- Brightness (5 steps)
+- Static colors: theme accent, live Predator-mode color (green/magenta/blue, matching whatever
+  the bar icon is currently tinted), plus 9 fixed swatches
+- 7 animated effects (Breathing / Neon / Wave / Shifting / Zoom / Meteor / Twinkling)
+- Quick actions: match Omarchy theme, match Predator mode
 
 The bar icon is the Predator claw mark, recolored live to match your active mode — green for
 battery saver, neon magenta for performance, blue for balanced, your theme's foreground color
@@ -111,7 +118,7 @@ you never did.)
 
 | Feature | Requires |
 |---|---|
-| Bar icon, status, power presets, power profile | Any Omarchy 4.0.1+ install |
+| Bar icon, status, Profile selector, power profile | Any Omarchy 4.0.1+ install |
 | Thermal profile, CPU turbo/cores/frequency, RAPL power limit | Intel CPU with `intel_pstate` + RAPL (most 8th-gen+ Intel laptops) |
 | GPU mode switching, dynamic boost | NVIDIA Optimus laptop + `envycontrol` |
 | Keyboard RGB, 80% battery limit, fan speed | Acer laptop + `linuwu-sense-dkms` |

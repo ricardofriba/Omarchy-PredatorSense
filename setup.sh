@@ -26,6 +26,20 @@ cat > "$HELPER" <<'HELPER'
 # though polkit lets it run without an interactive shell.
 set -euo pipefail
 cmd="${1:-}"; val="${2:-}"
+
+# Any of these verbs, run as the top-level command (not internally by
+# `profile` applying a named preset), means the user just hand-tuned a
+# setting — the remembered preset no longer describes reality, so the panel
+# should show CUSTOM until a named preset is picked again.
+case "$cmd" in
+  turbo|cpu-cap|cpu-cores|power-limit|platform-profile|fan|nvidia-powerd)
+    [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-perf/profile 2>/dev/null || true ;;
+  kb-zone|kb-effect)
+    # A manual color/effect pick — as opposed to kb-link or profile applying
+    # one on your behalf — means you no longer want the keyboard synced.
+    [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-perf/kblink 2>/dev/null || true ;;
+esac
+
 case "$cmd" in
   turbo)
     case "$val" in
@@ -104,9 +118,12 @@ case "$cmd" in
   fan)
     b=$(echo /sys/module/linuwu_sense/drivers/platform:acer-wmi/acer-wmi/*_sense 2>/dev/null)
     [[ -d $b && -w $b/fan_speed ]] || exit 3
+    # Driver expects "cpu,gpu" (see predator_fan_speed_store in
+    # linuwu_sense.c) — a bare number here was always -EINVAL, silently
+    # no-opping. Drive both fans together; that's all this panel exposes.
     case "$val" in
-      auto) echo 0 > "$b/fan_speed" ;;
-      [1-9]|[1-9][0-9]|100) echo "$val" > "$b/fan_speed" ;;
+      auto) echo "0,0" > "$b/fan_speed" ;;
+      [1-9]|[1-9][0-9]|100) echo "$val,$val" > "$b/fan_speed" ;;
       *) exit 2 ;;
     esac ;;
   kb-zone)   # static, all 4 zones one colour:  kb-zone <hex6> <brightness0-100>
@@ -131,6 +148,31 @@ case "$cmd" in
     cur="$(cat "$KB/per_zone_mode" 2>/dev/null)"; zones="${cur%,*}"
     [[ $zones =~ ^[0-9a-fA-F]{6}(,[0-9a-fA-F]{6}){3}$ ]] || zones="ffffff,ffffff,ffffff,ffffff"
     echo "$zones,$br" > "$KB/per_zone_mode" ;;
+  kb-link) # keep keyboard color synced to theme/profile across preset changes: kb-link <theme|profile|off> [theme_hex]
+    mode="${2:-}"; kbhex="${3:-ffffff}"
+    [[ $kbhex =~ ^[0-9a-fA-F]{6}$ ]] || kbhex=ffffff
+    install -d -m 755 /var/lib/omarchy-perf 2>/dev/null || true
+    case "$mode" in
+      off) rm -f /var/lib/omarchy-perf/kblink ;;
+      theme)
+        printf 'theme\n' > /var/lib/omarchy-perf/kblink 2>/dev/null || true
+        export OMARCHY_PERF_INTERNAL=1
+        "$0" kb-zone "$kbhex" 100 || true
+        unset OMARCHY_PERF_INTERNAL ;;
+      profile)
+        printf 'profile\n' > /var/lib/omarchy-perf/kblink 2>/dev/null || true
+        preset="$(cat /var/lib/omarchy-perf/profile 2>/dev/null)"
+        case "$preset" in
+          ultra|saver) hex=33ff77 ;;
+          performance|ultra-performance) hex=ff00ea ;;
+          balanced) hex=3b82f6 ;;
+          *) hex="$kbhex" ;;
+        esac
+        export OMARCHY_PERF_INTERNAL=1
+        "$0" kb-zone "$hex" 100 || true
+        unset OMARCHY_PERF_INTERNAL ;;
+      *) exit 2 ;;
+    esac ;;
   brightness) # screen backlight as a percentage: brightness <0-100>
     pct="${2:-}"
     [[ $pct =~ ^[0-9]+$ ]] || exit 2
@@ -146,6 +188,11 @@ case "$cmd" in
   profile) # apply a named power preset, then remember it: profile <name> [kb_hex]
     name="${2:-}"; kbhex="${3:-ffffff}"
     [[ $kbhex =~ ^[0-9a-fA-F]{6}$ ]] || kbhex=ffffff
+    # Only touch the keyboard on a preset change if a kb-link mode is active
+    # (see the kb-link verb) — otherwise leave whatever custom color/effect
+    # the user picked alone.
+    link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null)"
+    export OMARCHY_PERF_INTERNAL=1
     case "$name" in
       ultra)
         "$0" cpu-cores ecore            || true
@@ -153,15 +200,29 @@ case "$cmd" in
         "$0" cpu-cap 20                 || true
         "$0" power-limit 20 20          || true
         "$0" platform-profile low-power || true
+        "$0" fan auto                   || true
         "$0" kb-bright 0                || true
         "$0" brightness 1               || true ;;
+      saver)
+        "$0" cpu-cores all              || true
+        "$0" turbo off                  || true
+        "$0" cpu-cap 50                 || true
+        "$0" power-limit 30 40          || true
+        "$0" platform-profile quiet     || true
+        "$0" fan auto                   || true
+        "$0" kb-bright 0                || true
+        "$0" brightness 30              || true ;;
       balanced)
         "$0" cpu-cores all              || true
         "$0" turbo on                   || true
         "$0" cpu-cap 100                || true
         "$0" power-limit 65 157         || true
         "$0" platform-profile balanced  || true
-        "$0" kb-zone "$kbhex" 100       || true
+        "$0" fan auto                   || true
+        case "$link" in
+          theme)   "$0" kb-zone "$kbhex" 100 || true ;;
+          profile) "$0" kb-zone 3b82f6   100 || true ;;
+        esac
         "$0" brightness 60              || true ;;
       performance)
         "$0" cpu-cores all              || true
@@ -169,10 +230,28 @@ case "$cmd" in
         "$0" cpu-cap 100                || true
         "$0" power-limit 65 157         || true
         "$0" platform-profile performance || true
-        "$0" kb-zone "$kbhex" 100       || true
+        "$0" fan auto                   || true
+        case "$link" in
+          theme)   "$0" kb-zone "$kbhex" 100 || true ;;
+          profile) "$0" kb-zone ff00ea   100 || true ;;
+        esac
         "$0" brightness 90              || true ;;
+      ultra-performance)
+        "$0" cpu-cores all              || true
+        "$0" turbo on                   || true
+        "$0" cpu-cap 100                || true
+        "$0" power-limit 65 157         || true
+        "$0" platform-profile performance || true
+        "$0" nvidia-powerd on           || true
+        "$0" fan 100                    || true
+        case "$link" in
+          theme)   "$0" kb-zone "$kbhex" 100 || true ;;
+          profile) "$0" kb-zone ff00ea   100 || true ;;
+        esac
+        "$0" brightness 100             || true ;;
       *) exit 2 ;;
     esac
+    unset OMARCHY_PERF_INTERNAL
     install -d -m 755 /var/lib/omarchy-perf 2>/dev/null || true
     printf '%s\n' "$name"  > /var/lib/omarchy-perf/profile 2>/dev/null || true
     printf '%s\n' "$kbhex" > /var/lib/omarchy-perf/kbhex   2>/dev/null || true ;;
@@ -181,7 +260,7 @@ case "$cmd" in
     h="$(cat /var/lib/omarchy-perf/kbhex   2>/dev/null)" || h=ffffff
     [[ -n $p ]] || exit 0
     exec "$0" profile "$p" "$h" ;;
-  *) echo "usage: omarchy-perf-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|brightness|profile|apply-saved} <value...>" >&2; exit 2 ;;
+  *) echo "usage: omarchy-perf-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|kb-link|brightness|profile|apply-saved} <value...>" >&2; exit 2 ;;
 esac
 HELPER
 chmod 755 "$HELPER"

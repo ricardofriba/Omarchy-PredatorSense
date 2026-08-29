@@ -2,15 +2,15 @@
   "schemaVersion": 1,
   "id": "io.github.rezwoan.performance",
   "name": "PredatorSense",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Rezwoan",
   "license": "MIT",
-  "description": "Predator laptop control center: power presets, CPU/GPU/fan/battery controls, and keyboard RGB.",
+  "description": "Predator laptop control center: one power profile selector, CPU/GPU/fan/battery controls, and keyboard RGB.",
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "Panel.qml" },
   "barWidget": {
     "displayName": "PredatorSense",
-    "description": "Power preset, CPU/GPU/battery/fan controls for the Acer Predator laptop",
+    "description": "Power profile, CPU/GPU/battery/fan controls, and keyboard RGB for the Acer Predator laptop",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right"

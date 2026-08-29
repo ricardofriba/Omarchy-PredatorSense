@@ -1,6 +1,7 @@
 #!/bin/bash
-# Read-only status snapshot for the Performance bar plugin. Never needs sudo —
-# every value here is a plain sysfs/systemctl read. Prints one JSON object.
+# Read-only status snapshot for the PredatorSense bar plugin. Never needs
+# sudo — every value here is a plain sysfs/systemctl read. Prints one JSON
+# object.
 set -uo pipefail
 
 ls_base() {
@@ -64,8 +65,12 @@ fi
 
 fan="n/a"
 if [[ -n $lsb && -r "$lsb/fan_speed" ]]; then
-  v="$(cat "$lsb/fan_speed" 2>/dev/null)"
-  [[ -z $v || $v == 0* ]] && fan=auto || fan="$v"
+  # linuwu_sense reports/expects "cpu,gpu" (see predator_fan_speed_show/store
+  # in linuwu_sense.c) — a bare number here was always rejected with
+  # -EINVAL, which is why the fan control silently did nothing.
+  raw="$(cat "$lsb/fan_speed" 2>/dev/null)"
+  cpu_v="${raw%%,*}"
+  [[ -z $cpu_v || $cpu_v == 0 ]] && fan=auto || fan="$cpu_v"
 fi
 
 kb_available=false
@@ -92,5 +97,8 @@ theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors
 helper_ok=false
 [[ -x /usr/local/bin/omarchy-perf-helper && -f /usr/share/polkit-1/actions/io.github.rezwoan.performance.helper.policy ]] && helper_ok=true
 
-printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","themeHex":"%s","helperOk":%s}\n' \
-  "$profile" "$turbo" "$thermal" "$thermal_choices" "$cpucap" "$cores" "$powerlimit" "$gpu" "$gpu_available" "$powerd" "$battlimit" "$fan" "$kb_available" "$kb_pkg_installed" "${battpct:-}" "${battstatus:-}" "$preset" "$theme_hex" "$helper_ok"
+kb_link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null)"
+[[ $kb_link == theme || $kb_link == profile ]] || kb_link=off
+
+printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","themeHex":"%s","helperOk":%s,"kbLink":"%s"}\n' \
+  "$profile" "$turbo" "$thermal" "$thermal_choices" "$cpucap" "$cores" "$powerlimit" "$gpu" "$gpu_available" "$powerd" "$battlimit" "$fan" "$kb_available" "$kb_pkg_installed" "${battpct:-}" "${battstatus:-}" "$preset" "$theme_hex" "$helper_ok" "$kb_link"
