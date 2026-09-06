@@ -9,7 +9,7 @@ import sys
 DYNAMIC = Path('/dev/acer-gkbbl-0')
 STATIC = Path('/dev/acer-gkbbl-static-0')
 HWMON = Path('/sys/class/hwmon')
-STATE = Path('/var/lib/omarchy-perf/facer-keyboard.json')
+STATE = Path('/var/lib/omarchy-predatorsense-ph31552/facer-keyboard.json')
 
 def number(value, low, high):
     if not re.fullmatch(r'[0-9]+', str(value)):

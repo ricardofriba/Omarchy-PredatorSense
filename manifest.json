@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.rezwoan.performance",
-  "name": "PredatorSense",
-  "version": "1.1.1",
-  "author": "Rezwoan",
+  "id": "io.github.ricardofriba.predatorsense",
+  "name": "PredatorSense PH315-52",
+  "version": "1.2.0",
+  "author": "ricardofriba (based on Rezwoan)",
   "license": "MIT",
   "description": "PredatorSense with PH315-52 facer RGB and WMI fan controls.",
   "kinds": [
@@ -13,7 +13,7 @@
     "barWidget": "Panel.qml"
   },
   "barWidget": {
-    "displayName": "PredatorSense",
+    "displayName": "PredatorSense PH315-52",
     "description": "Power profile, CPU/GPU/battery/fan controls, and keyboard RGB for the Acer Predator laptop",
     "category": "System",
     "allowMultiple": false,

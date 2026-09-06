@@ -14,7 +14,7 @@ class FirstRun(unittest.TestCase):
             helper = base / 'helper'
             code = SOURCE.read_text().split("<<'HELPER'\n", 1)[1].split('\nHELPER\n', 1)[0]
             # Redirect every hardware/state path; no real hardware writes.
-            code = code.replace('/var/lib/omarchy-perf', str(state)).replace('/sys/', str(base / 'sys') + '/')
+            code = code.replace('/var/lib/omarchy-predatorsense-ph31552', str(state)).replace('/sys/', str(base / 'sys') + '/')
             helper.write_text(code)
             helper.chmod(0o755)
             result = subprocess.run([str(helper), *args], capture_output=True, text=True)

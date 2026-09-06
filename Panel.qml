@@ -12,7 +12,7 @@ import "Model.js" as Model
 // from an old walker-menu extension (omarchy/extensions/menu.sh) into a
 // proper bar-widget plugin for the omarchy-shell era.
 //
-// Privileged writes go through /usr/local/bin/omarchy-perf-helper, a
+// Privileged writes go through /usr/local/bin/omarchy-predatorsense-ph31552-helper, a
 // root-owned, verb-whitelisted script authorized via a polkit action scoped
 // to that exact binary (see setup.sh and README.md) — no sudoers file, no
 // passwordless-sudo rule. Every control here degrades gracefully when that
@@ -20,10 +20,10 @@ import "Model.js" as Model
 // installed: read-only status still shows, writes just no-op.
 Panel {
   id: root
-  moduleName: "io.github.rezwoan.performance"
-  ipcTarget: "io.github.rezwoan.performance"
+  moduleName: "io.github.ricardofriba.predatorsense"
+  ipcTarget: "io.github.ricardofriba.predatorsense"
 
-  readonly property string pluginDir: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.rezwoan.performance"
+  readonly property string pluginDir: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.ricardofriba.predatorsense"
   property var status: Model.parseStatus("")
   property string activeTab: "general"
   property bool showAdvanced: false
@@ -65,7 +65,7 @@ Panel {
   function runPrivileged() {
     var args = Array.prototype.slice.call(arguments)
     var quoted = args.map(function(a) { return Util.shellQuote(String(a)) })
-    runPlain("pkexec /usr/local/bin/omarchy-perf-helper " + quoted.join(" "))
+    runPlain("pkexec /usr/local/bin/omarchy-predatorsense-ph31552-helper " + quoted.join(" "))
     refreshTimer.restart()
   }
 
@@ -99,7 +99,7 @@ Panel {
 
   function setPowerProfile(name) {
     runPlain("powerprofilesctl set " + Util.shellQuote(name)
-      + " && pkexec /usr/local/bin/omarchy-perf-helper turbo "
+      + " && pkexec /usr/local/bin/omarchy-predatorsense-ph31552-helper turbo "
       + (name === "power-saver" ? "off" : "on"))
   }
 
@@ -183,7 +183,7 @@ Panel {
 
   Process {
     id: statusProc
-    command: [Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.rezwoan.performance/status.sh"]
+    command: [Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.ricardofriba.predatorsense/status.sh"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.status = Model.parseStatus(text)

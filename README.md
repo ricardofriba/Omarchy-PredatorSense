@@ -11,7 +11,13 @@ A fork of [Rezwoan/Omarchy-PredatorSense](https://github.com/Rezwoan/Omarchy-Pre
 - Failed control commands produce a notification; only one control command runs at a time.
 - The existing Linuwu-Sense backend remains available on machines that use it. The new facer bridge is deliberately restricted to PH315-52.
 
-The plugin keeps the original ID `io.github.rezwoan.performance`, so it replaces the original plugin; do not install both as separate widgets.
+Marketplace identity: `io.github.ricardofriba.predatorsense`. Version 1.2.0 uses its own plugin ID, privileged helper, polkit action and state directory. It does not replace Rezwoan's installation. Disable the original widget before using this fork to avoid competing hardware commands:
+
+```bash
+omarchy plugin disable io.github.rezwoan.performance
+```
+
+Versions 1.1.x of this fork used the original ID; their release tags remain available. Install 1.2.0 as a new plugin and enable its privileged controls once.
 
 ## Tested hardware
 
@@ -36,10 +42,10 @@ omarchy plugin add https://github.com/ricardofriba/Omarchy-PredatorSense.git --e
 omarchy restart shell
 ```
 
-Open PredatorSense and click **Enable privileged controls** once. If upgrading from the original version and that button is no longer visible, update the existing helper explicitly:
+Open PredatorSense and click **Enable privileged controls** once. To reinstall or update this fork's helper explicitly:
 
 ```bash
-pkexec bash ~/.config/omarchy/plugins/io.github.rezwoan.performance/setup.sh
+pkexec bash ~/.config/omarchy/plugins/io.github.ricardofriba.predatorsense/setup.sh
 ```
 
 The helper remains root-owned and uses the existing polkit authentication policy. No passwordless sudo rule is installed.
@@ -83,6 +89,30 @@ omarchy pkg aur add envycontrol
 ```
 
 Changing GPU mode may require rebooting. It is not required for keyboard or fan controls.
+
+## Remove
+
+Remove the widget and its own helper/service:
+
+```bash
+omarchy plugin remove io.github.ricardofriba.predatorsense
+sudo systemctl disable --now omarchy-predatorsense-ph31552-restore.service
+sudo rm -f /usr/local/bin/omarchy-predatorsense-ph31552-helper \
+  /usr/local/lib/omarchy-predatorsense-ph31552-facer.py \
+  /usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy \
+  /etc/systemd/system/omarchy-predatorsense-ph31552-restore.service
+sudo systemctl daemon-reload
+```
+
+Saved settings remain in `/var/lib/omarchy-predatorsense-ph31552`; remove that directory separately if no longer wanted. Driver removal is optional if another app uses facer. If you installed it solely for this plugin, remove the two boot configuration files described above, then remove the package:
+
+```bash
+sudo rm -f /etc/modprobe.d/predatorsense-facer.conf /etc/modules-load.d/predatorsense-facer.conf
+sudo pacman -R predator-facer-dkms
+sudo limine-mkinitcpio
+```
+
+Reboot when convenient to return to the stock Acer driver. Remove those configuration files only if you created them for this installation. This does not uninstall the original plugin or its helper.
 
 ## Verification
 

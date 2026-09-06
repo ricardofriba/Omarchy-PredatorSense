@@ -101,7 +101,7 @@ pacman -Qq linuwu-sense-dkms >/dev/null 2>&1 && kb_pkg_installed=true
 battpct="$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)"
 battstatus="$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)"
 
-preset="$(cat /var/lib/omarchy-perf/profile 2>/dev/null || echo "")"
+preset="$(cat /var/lib/omarchy-predatorsense-ph31552/profile 2>/dev/null || echo "")"
 
 theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors.toml" 2>/dev/null | grep -oiE '[0-9a-f]{6}' | head -1)"
 [[ -z $theme_hex ]] && theme_hex="ffffff"
@@ -111,9 +111,9 @@ theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors
 # probe non-interactively. Existence is the readiness signal: this file only
 # exists once our own setup.sh has installed it.
 helper_ok=false
-[[ -x /usr/local/bin/omarchy-perf-helper && -f /usr/share/polkit-1/actions/io.github.rezwoan.performance.helper.policy ]] && helper_ok=true
+[[ -x /usr/local/bin/omarchy-predatorsense-ph31552-helper && -f /usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy ]] && helper_ok=true
 
-kb_link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null)"
+kb_link="$(cat /var/lib/omarchy-predatorsense-ph31552/kblink 2>/dev/null)"
 [[ $kb_link == theme || $kb_link == profile ]] || kb_link=off
 
 printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","themeHex":"%s","helperOk":%s,"kbLink":"%s","facerAvailable":%s}\n' \

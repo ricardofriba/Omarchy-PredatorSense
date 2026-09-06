@@ -13,15 +13,15 @@
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "This script must run as root (the plugin invokes it via pkexec)."; exit 1; }
 
-HELPER=/usr/local/bin/omarchy-perf-helper
-ACTION_ID=io.github.rezwoan.performance.helper
+HELPER=/usr/local/bin/omarchy-predatorsense-ph31552-helper
+ACTION_ID=io.github.ricardofriba.predatorsense.helper
 
 install -d /usr/local/bin
 cat > "$HELPER" <<'HELPER'
 #!/bin/bash
-# omarchy-perf-helper — privileged applier for the Performance plugin.
+# omarchy-predatorsense-ph31552-helper — privileged applier for the Performance plugin.
 # Root-owned, invoked via a polkit action scoped to this exact path (see
-# io.github.rezwoan.performance.helper.policy). Accepts ONLY whitelisted verbs and
+# io.github.ricardofriba.predatorsense.helper.policy). Accepts ONLY whitelisted verbs and
 # values, so it cannot be coerced into running arbitrary commands even
 # though polkit lets it run without an interactive shell.
 set -euo pipefail
@@ -33,18 +33,18 @@ cmd="${1:-}"; val="${2:-}"
 # should show CUSTOM until a named preset is picked again.
 case "$cmd" in
   turbo|cpu-cap|cpu-cores|power-limit|platform-profile|fan|nvidia-powerd)
-    [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-perf/profile 2>/dev/null || true ;;
+    [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-predatorsense-ph31552/profile 2>/dev/null || true ;;
   kb-zone|kb-effect)
     # A manual color/effect pick — as opposed to kb-link or profile applying
     # one on your behalf — means you no longer want the keyboard synced.
-    [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-perf/kblink 2>/dev/null || true ;;
+    [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-predatorsense-ph31552/kblink 2>/dev/null || true ;;
 esac
 
 # facer uses character devices for RGB and legacy EC fan presets.
 if [[ -d /sys/module/facer ]]; then
   case "$cmd" in
     fan|kb-zone|kb-effect|kb-bright)
-      exec /usr/bin/python3 -I /usr/local/lib/omarchy-perf-facer.py "$@" ;;
+      exec /usr/bin/python3 -I /usr/local/lib/omarchy-predatorsense-ph31552-facer.py "$@" ;;
   esac
 fi
 
@@ -159,17 +159,17 @@ case "$cmd" in
   kb-link) # keep keyboard color synced to theme/profile across preset changes: kb-link <theme|profile|off> [theme_hex]
     mode="${2:-}"; kbhex="${3:-ffffff}"
     [[ $kbhex =~ ^[0-9a-fA-F]{6}$ ]] || kbhex=ffffff
-    install -d -m 755 /var/lib/omarchy-perf 2>/dev/null || true
+    install -d -m 755 /var/lib/omarchy-predatorsense-ph31552 2>/dev/null || true
     case "$mode" in
-      off) rm -f /var/lib/omarchy-perf/kblink ;;
+      off) rm -f /var/lib/omarchy-predatorsense-ph31552/kblink ;;
       theme)
-        printf 'theme\n' > /var/lib/omarchy-perf/kblink 2>/dev/null || true
+        printf 'theme\n' > /var/lib/omarchy-predatorsense-ph31552/kblink 2>/dev/null || true
         export OMARCHY_PERF_INTERNAL=1
         "$0" kb-zone "$kbhex" 100 || true
         unset OMARCHY_PERF_INTERNAL ;;
       profile)
-        printf 'profile\n' > /var/lib/omarchy-perf/kblink 2>/dev/null || true
-        preset="$(cat /var/lib/omarchy-perf/profile 2>/dev/null || true)"
+        printf 'profile\n' > /var/lib/omarchy-predatorsense-ph31552/kblink 2>/dev/null || true
+        preset="$(cat /var/lib/omarchy-predatorsense-ph31552/profile 2>/dev/null || true)"
         case "$preset" in
           ultra|saver) hex=33ff77 ;;
           performance|ultra-performance) hex=ff00ea ;;
@@ -199,7 +199,7 @@ case "$cmd" in
     # Only touch the keyboard on a preset change if a kb-link mode is active
     # (see the kb-link verb) — otherwise leave whatever custom color/effect
     # the user picked alone.
-    link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null || true)"
+    link="$(cat /var/lib/omarchy-predatorsense-ph31552/kblink 2>/dev/null || true)"
     export OMARCHY_PERF_INTERNAL=1
     case "$name" in
       ultra)
@@ -260,19 +260,19 @@ case "$cmd" in
       *) exit 2 ;;
     esac
     unset OMARCHY_PERF_INTERNAL
-    install -d -m 755 /var/lib/omarchy-perf 2>/dev/null || true
-    printf '%s\n' "$name"  > /var/lib/omarchy-perf/profile 2>/dev/null || true
-    printf '%s\n' "$kbhex" > /var/lib/omarchy-perf/kbhex   2>/dev/null || true ;;
+    install -d -m 755 /var/lib/omarchy-predatorsense-ph31552 2>/dev/null || true
+    printf '%s\n' "$name"  > /var/lib/omarchy-predatorsense-ph31552/profile 2>/dev/null || true
+    printf '%s\n' "$kbhex" > /var/lib/omarchy-predatorsense-ph31552/kbhex   2>/dev/null || true ;;
   apply-saved) # re-apply the remembered profile (run at boot by the restore service)
-    p="$(cat /var/lib/omarchy-perf/profile 2>/dev/null)" || exit 0
-    h="$(cat /var/lib/omarchy-perf/kbhex   2>/dev/null)" || h=ffffff
+    p="$(cat /var/lib/omarchy-predatorsense-ph31552/profile 2>/dev/null)" || exit 0
+    h="$(cat /var/lib/omarchy-predatorsense-ph31552/kbhex   2>/dev/null)" || h=ffffff
     [[ -n $p ]] || exit 0
     exec "$0" profile "$p" "$h" ;;
-  *) echo "usage: omarchy-perf-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|kb-link|brightness|profile|apply-saved} <value...>" >&2; exit 2 ;;
+  *) echo "usage: omarchy-predatorsense-ph31552-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|kb-link|brightness|profile|apply-saved} <value...>" >&2; exit 2 ;;
 esac
 HELPER
-install -Dm644 "$(dirname "$(readlink -f "$0")")/facer.py" /usr/local/lib/omarchy-perf-facer.py
-chown root:root /usr/local/lib/omarchy-perf-facer.py
+install -Dm644 "$(dirname "$(readlink -f "$0")")/facer.py" /usr/local/lib/omarchy-predatorsense-ph31552-facer.py
+chown root:root /usr/local/lib/omarchy-predatorsense-ph31552-facer.py
 chmod 755 "$HELPER"
 chown root:root "$HELPER"
 echo "==> Installed $HELPER"
@@ -299,14 +299,14 @@ cat > "/usr/share/polkit-1/actions/$ACTION_ID.policy" <<POLICY
 POLICY
 echo "==> Installed polkit action $ACTION_ID (auth_admin_keep — you authenticate once, not per click)"
 
-install -d -m 755 /var/lib/omarchy-perf
-chown root:root /var/lib/omarchy-perf
+install -d -m 755 /var/lib/omarchy-predatorsense-ph31552
+chown root:root /var/lib/omarchy-predatorsense-ph31552
 
-cat > /etc/systemd/system/omarchy-perf-restore.service <<UNIT
+cat > /etc/systemd/system/omarchy-predatorsense-ph31552-restore.service <<UNIT
 [Unit]
 Description=Restore last-selected Omarchy power profile
 After=multi-user.target
-ConditionPathExists=/var/lib/omarchy-perf/profile
+ConditionPathExists=/var/lib/omarchy-predatorsense-ph31552/profile
 
 [Service]
 Type=oneshot
@@ -316,7 +316,7 @@ ExecStart=$HELPER apply-saved
 WantedBy=multi-user.target
 UNIT
 systemctl daemon-reload
-systemctl enable omarchy-perf-restore.service >/dev/null 2>&1 || true
-echo "==> Installed + enabled omarchy-perf-restore.service (remembers last profile across reboots)"
+systemctl enable omarchy-predatorsense-ph31552-restore.service >/dev/null 2>&1 || true
+echo "==> Installed + enabled omarchy-predatorsense-ph31552-restore.service (remembers last profile across reboots)"
 echo
 echo "DONE. The Performance panel's controls go live immediately — no re-login needed."

@@ -53,4 +53,4 @@ sysfs paths and ACPI hotkey behavior vary enough between vendors that
 | `assets/predator-mask.png` | Recolorable logo (white silhouette, alpha background) |
 
 See `README.md`'s "How it works" section for the polkit-based privilege model
-before changing anything that touches `/usr/local/bin/omarchy-perf-helper`.
+before changing anything that touches `/usr/local/bin/omarchy-predatorsense-ph31552-helper`.
