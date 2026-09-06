@@ -1,0 +1,28 @@
+pkgname=predator-facer-dkms
+pkgver=0.2
+pkgrel=3
+pkgdesc='Acer Predator facer driver with PH315-52 WMI fan control'
+arch=('any')
+url='https://github.com/cleyton1986/predator-sense'
+license=('GPL-2.0-or-later')
+depends=('dkms')
+optdepends=('linux-headers: build for the standard Arch kernel')
+conflicts=('linuwu-sense-dkms')
+_commit=61178196ad8d4620ea26379a62c7558817193a9d
+source=("facer.c::https://raw.githubusercontent.com/cleyton1986/predator-sense/$_commit/predator-sense-gui/kernel/facer.c"
+        'ph315-52-pwm.patch' 'dkms.conf')
+sha256sums=('dcffd20e818853bab391346178b7043807623f3bc121ea279a09e967793abcf5'
+            '95033a8d91946b9cc7e18a2f9d4d08ce069fd89d23c207fe3196958faf5e4b8d'
+            'a51707ce2fa6b8b27935df04cd91795332b151f8632602f7cc2a6cdfe700e052')
+prepare() {
+  # makepkg initially symlinks local/downloaded source files.
+  cp facer.c facer.c.build
+  mv facer.c.build facer.c
+  patch -Np1 -i ph315-52-pwm.patch
+}
+package() {
+  for f in facer.c dkms.conf; do
+    install -Dm644 "$f" "$pkgdir/usr/src/facer-$pkgver/$f"
+  done
+  printf 'obj-m := facer.o\n' > "$pkgdir/usr/src/facer-$pkgver/Makefile"
+}

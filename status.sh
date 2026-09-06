@@ -73,8 +73,24 @@ if [[ -n $lsb && -r "$lsb/fan_speed" ]]; then
   [[ -z $cpu_v || $cpu_v == 0 ]] && fan=auto || fan="$cpu_v"
 fi
 
+facer_available=false
+[[ -d /sys/module/facer ]] && facer_available=true
+if [[ $facer_available == true ]]; then
+  for hw in /sys/class/hwmon/hwmon*; do
+    [[ "$(cat "$hw/name" 2>/dev/null)" == *acer* && -r "$hw/pwm1_enable" ]] || continue
+    case "$(cat "$hw/pwm1_enable" 2>/dev/null)" in
+      2) fan=auto ;;
+      0) fan=100 ;;
+      1)
+        pwm="$(cat "$hw/pwm1" 2>/dev/null)"
+        [[ $pwm =~ ^[0-9]+$ ]] && fan=$(( (pwm * 100 + 127) / 255 )) ;;
+    esac
+    break
+  done
+fi
+
 kb_available=false
-[[ -n "$(kb_base)" ]] && kb_available=true
+[[ -n "$(kb_base)" || -e /dev/acer-gkbbl-0 ]] && kb_available=true
 
 # Distinguish "package not installed" from "installed but module not loaded"
 # so the panel can offer a one-click fix (pkexec enable-keyboard.sh) instead
@@ -100,5 +116,5 @@ helper_ok=false
 kb_link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null)"
 [[ $kb_link == theme || $kb_link == profile ]] || kb_link=off
 
-printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","themeHex":"%s","helperOk":%s,"kbLink":"%s"}\n' \
-  "$profile" "$turbo" "$thermal" "$thermal_choices" "$cpucap" "$cores" "$powerlimit" "$gpu" "$gpu_available" "$powerd" "$battlimit" "$fan" "$kb_available" "$kb_pkg_installed" "${battpct:-}" "${battstatus:-}" "$preset" "$theme_hex" "$helper_ok" "$kb_link"
+printf '{"profile":"%s","turbo":"%s","thermal":"%s","thermalChoices":"%s","cpucap":"%s","cores":"%s","powerlimit":"%s","gpu":"%s","gpuAvailable":%s,"powerd":"%s","battlimit":"%s","fan":"%s","kbAvailable":%s,"kbPkgInstalled":%s,"battpct":"%s","battstatus":"%s","preset":"%s","themeHex":"%s","helperOk":%s,"kbLink":"%s","facerAvailable":%s}\n' \
+  "$profile" "$turbo" "$thermal" "$thermal_choices" "$cpucap" "$cores" "$powerlimit" "$gpu" "$gpu_available" "$powerd" "$battlimit" "$fan" "$kb_available" "$kb_pkg_installed" "${battpct:-}" "${battstatus:-}" "$preset" "$theme_hex" "$helper_ok" "$kb_link" "$facer_available"

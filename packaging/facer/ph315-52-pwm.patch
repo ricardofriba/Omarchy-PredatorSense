@@ -1,0 +1,4 @@
+--- a/facer.c
++++ b/facer.c
+@@ -604,0 +605 @@
++	.pwm = 1, /* PH315-52 gaming fan methods, also used by Linuwu PR 54. */

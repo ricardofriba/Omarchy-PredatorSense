@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+packaging/facer/src/
+packaging/facer/pkg/
+packaging/facer/*.pkg.tar.*
+packaging/facer/facer.c

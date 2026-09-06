@@ -65,13 +65,14 @@ Panel {
   function runPrivileged() {
     var args = Array.prototype.slice.call(arguments)
     var quoted = args.map(function(a) { return Util.shellQuote(String(a)) })
-    root.bar.run("pkexec /usr/local/bin/omarchy-perf-helper " + quoted.join(" "))
+    runPlain("pkexec /usr/local/bin/omarchy-perf-helper " + quoted.join(" "))
     refreshTimer.restart()
   }
 
   function runPlain(cmd) {
-    root.bar.run(cmd)
-    refreshTimer.restart()
+    if (actionProc.running) return
+    actionProc.command = ["bash", "-c", cmd]
+    actionProc.running = true
   }
 
   // One-time privileged setup, triggered from the UI — never a terminal.
@@ -97,8 +98,9 @@ Panel {
   }
 
   function setPowerProfile(name) {
-    runPlain("powerprofilesctl set " + Util.shellQuote(name))
-    runPrivileged("turbo", name === "power-saver" ? "off" : "on")
+    runPlain("powerprofilesctl set " + Util.shellQuote(name)
+      + " && pkexec /usr/local/bin/omarchy-perf-helper turbo "
+      + (name === "power-saver" ? "off" : "on"))
   }
 
   function setThermal(name) { runPrivileged("platform-profile", name) }
@@ -165,6 +167,18 @@ Panel {
     interval: 450
     repeat: false
     onTriggered: root.refresh()
+  }
+
+  Process {
+    id: actionProc
+    stderr: StdioCollector { id: actionError; waitForEnd: true }
+    onExited: function(code, status) {
+      root.refresh()
+      if (code !== 0) {
+        root.bar.run("notify-send -u normal PredatorSense " + Util.shellQuote(
+          actionError.text.trim() || "Command failed or authentication was cancelled"))
+      }
+    }
   }
 
   Process {
@@ -701,7 +715,7 @@ Panel {
               visible: root.status.battlimit === "n/a"
               width: parent.width
               wrapMode: Text.WordWrap
-              text: "Charge limit + fan control need linuwu-sense-dkms (AUR) — not installed."
+              text: "Charge limiting is unavailable on this hardware/driver."
               color: Qt.darker(root.bar.foreground, 1.6)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.bodySmall
@@ -846,7 +860,13 @@ Panel {
             PanelSectionHeader { text: "EFFECT"; foreground: root.bar.foreground; fontFamily: root.bar.fontFamily }
             Grid {
               id: effectGrid
-              readonly property var options: [
+              readonly property var options: root.status.facerAvailable ? [
+                { mode: "1", label: "Breathing" },
+                { mode: "2", label: "Neon" },
+                { mode: "3", label: "Wave" },
+                { mode: "4", label: "Shifting" },
+                { mode: "5", label: "Zoom" }
+              ] : [
                 { mode: "1", label: "Breathing" },
                 { mode: "2", label: "Neon" },
                 { mode: "3", label: "Wave" },

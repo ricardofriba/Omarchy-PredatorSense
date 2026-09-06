@@ -40,6 +40,14 @@ case "$cmd" in
     [[ -n "${OMARCHY_PERF_INTERNAL:-}" ]] || rm -f /var/lib/omarchy-perf/kblink 2>/dev/null || true ;;
 esac
 
+# facer uses character devices for RGB and legacy EC fan presets.
+if [[ -d /sys/module/facer ]]; then
+  case "$cmd" in
+    fan|kb-zone|kb-effect|kb-bright)
+      exec /usr/bin/python3 -I /usr/local/lib/omarchy-perf-facer.py "$@" ;;
+  esac
+fi
+
 case "$cmd" in
   turbo)
     case "$val" in
@@ -161,7 +169,7 @@ case "$cmd" in
         unset OMARCHY_PERF_INTERNAL ;;
       profile)
         printf 'profile\n' > /var/lib/omarchy-perf/kblink 2>/dev/null || true
-        preset="$(cat /var/lib/omarchy-perf/profile 2>/dev/null)"
+        preset="$(cat /var/lib/omarchy-perf/profile 2>/dev/null || true)"
         case "$preset" in
           ultra|saver) hex=33ff77 ;;
           performance|ultra-performance) hex=ff00ea ;;
@@ -191,7 +199,7 @@ case "$cmd" in
     # Only touch the keyboard on a preset change if a kb-link mode is active
     # (see the kb-link verb) — otherwise leave whatever custom color/effect
     # the user picked alone.
-    link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null)"
+    link="$(cat /var/lib/omarchy-perf/kblink 2>/dev/null || true)"
     export OMARCHY_PERF_INTERNAL=1
     case "$name" in
       ultra)
@@ -263,6 +271,8 @@ case "$cmd" in
   *) echo "usage: omarchy-perf-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|kb-link|brightness|profile|apply-saved} <value...>" >&2; exit 2 ;;
 esac
 HELPER
+install -Dm644 "$(dirname "$(readlink -f "$0")")/facer.py" /usr/local/lib/omarchy-perf-facer.py
+chown root:root /usr/local/lib/omarchy-perf-facer.py
 chmod 755 "$HELPER"
 chown root:root "$HELPER"
 echo "==> Installed $HELPER"
