@@ -246,7 +246,11 @@ Panel {
 
         Column {
           id: column
-          width: scrollArea.availableWidth
+          // 1px inset per side: at fractional output scales (e.g. 1.25) the
+          // ScrollView clip otherwise eats the left border of chips that
+          // start a row (General, Ultra Saver, All…).
+          x: Style.space(1)
+          width: scrollArea.availableWidth - Style.space(2)
           spacing: Style.space(14)
 
           // ---------- Hero ----------
