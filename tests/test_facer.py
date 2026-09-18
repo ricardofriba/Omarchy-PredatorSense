@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 import tempfile
 from unittest.mock import patch
-p=Path(__file__).resolve().parents[1] / 'facer.py'
+p=Path(__file__).resolve().parents[1] / 'system' / 'facer.py'
 spec=importlib.util.spec_from_file_location('bridge',p)
 b=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(b)

@@ -11,7 +11,7 @@ A fork of [Rezwoan/Omarchy-PredatorSense](https://github.com/Rezwoan/Omarchy-Pre
 - Failed control commands produce a notification; only one control command runs at a time.
 - The existing Linuwu-Sense backend remains available on machines that use it. The new facer bridge is deliberately restricted to PH315-52.
 
-Marketplace identity: `io.github.ricardofriba.predatorsense`. Version 1.2.0 uses its own plugin ID, privileged helper, polkit action and state directory. It does not replace Rezwoan's installation. Disable the original widget before using this fork to avoid competing hardware commands:
+Marketplace identity: `io.github.ricardofriba.predatorsense`. Since 1.2.0 this fork uses its own plugin ID, privileged helper, polkit action and state directory. It does not replace Rezwoan's installation. Disable the original widget before using this fork to avoid competing hardware commands:
 
 ```bash
 omarchy plugin disable io.github.rezwoan.performance
@@ -42,13 +42,46 @@ omarchy plugin add https://github.com/ricardofriba/Omarchy-PredatorSense.git --e
 omarchy restart shell
 ```
 
-Open PredatorSense and click **Enable privileged controls** once. To reinstall or update this fork's helper explicitly:
+Without anything else the panel is read-only. Hardware controls need the separately installed helper package below.
+
+## Install the privileged helper
+
+The plugin never runs anything as root from its own (user-writable) checkout. Power, CPU, fan, battery and keyboard writes go through a small root-owned, verb-restricted helper that you install yourself as a normal pacman package:
 
 ```bash
-pkexec bash ~/.config/omarchy/plugins/io.github.ricardofriba.predatorsense/setup.sh
+cd ~/.config/omarchy/plugins/io.github.ricardofriba.predatorsense/packaging/helper
+makepkg -si
 ```
 
-The helper remains root-owned and uses the existing polkit authentication policy. No passwordless sudo rule is installed.
+The panel's **Copy install command** button copies exactly that command. Review [`packaging/helper/PKGBUILD`](packaging/helper/PKGBUILD) before running it: it downloads the four privileged files from one pinned commit of this repository and verifies their SHA-256 checksums, so the installed code is the reviewed snapshot even if the plugin checkout later changes. The package installs:
+
+| Path | Purpose |
+| --- | --- |
+| `/usr/bin/omarchy-predatorsense-ph31552-helper` | Accepts only whitelisted verbs and validated values |
+| `/usr/lib/omarchy-predatorsense-ph31552/facer.py` | PH315-52 facer RGB/fan bridge, run by the helper |
+| `/usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy` | polkit action scoped to that exact helper path (`auth_admin_keep`) |
+| `/usr/lib/systemd/system/omarchy-predatorsense-ph31552-restore.service` | Optional boot restore of the last preset (disabled by default) |
+
+Every hardware change asks for administrator authentication through polkit (remembered for a few minutes). No sudoers file or passwordless rule is installed. To restore the last preset at boot:
+
+```bash
+sudo systemctl enable omarchy-predatorsense-ph31552-restore.service
+```
+
+Updating the helper means pulling a plugin update and running `makepkg -si` again in the same directory.
+
+### Upgrading from 1.2.0
+
+Version 1.2.0 installed the helper from inside the panel. Remove those files before installing the package (pacman refuses to overwrite the old polkit policy):
+
+```bash
+sudo systemctl disable --now omarchy-predatorsense-ph31552-restore.service
+sudo rm -f /usr/local/bin/omarchy-predatorsense-ph31552-helper \
+  /usr/local/lib/omarchy-predatorsense-ph31552-facer.py \
+  /usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy \
+  /etc/systemd/system/omarchy-predatorsense-ph31552-restore.service
+sudo systemctl daemon-reload
+```
 
 ## Install the PH315-52 driver
 
@@ -92,16 +125,12 @@ Changing GPU mode may require rebooting. It is not required for keyboard or fan 
 
 ## Remove
 
-Remove the widget and its own helper/service:
+Remove the widget and its helper package:
 
 ```bash
 omarchy plugin remove io.github.ricardofriba.predatorsense
 sudo systemctl disable --now omarchy-predatorsense-ph31552-restore.service
-sudo rm -f /usr/local/bin/omarchy-predatorsense-ph31552-helper \
-  /usr/local/lib/omarchy-predatorsense-ph31552-facer.py \
-  /usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy \
-  /etc/systemd/system/omarchy-predatorsense-ph31552-restore.service
-sudo systemctl daemon-reload
+sudo pacman -R predatorsense-ph31552-helper
 ```
 
 Saved settings remain in `/var/lib/omarchy-predatorsense-ph31552`; remove that directory separately if no longer wanted. Driver removal is optional if another app uses facer. If you installed it solely for this plugin, remove the two boot configuration files described above, then remove the package:
@@ -118,11 +147,11 @@ Reboot when convenient to return to the stock Acer driver. Remove those configur
 
 ```bash
 python3 -m unittest discover -s tests -v
-bash -n setup.sh status.sh enable-keyboard.sh packaging/facer/PKGBUILD
+bash -n status.sh system/omarchy-predatorsense-ph31552-helper packaging/facer/PKGBUILD packaging/helper/PKGBUILD
 omarchy plugin validate .
 ```
 
-The nine tests use temporary files or pure protocol functions and do not write to hardware. Hardware validation additionally checked WMI mode readback and RPM changes. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for Omarchy reload and UI validation.
+The tests use temporary files or pure protocol functions and do not write to hardware; they also check that the helper package's pinned checksums match the files in `system/`. Hardware validation additionally checked WMI mode readback and RPM changes. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for Omarchy reload and UI validation.
 
 ## Credits and licensing
 

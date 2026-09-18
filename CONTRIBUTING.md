@@ -32,12 +32,16 @@ sysfs paths and ACPI hotkey behavior vary enough between vendors that
    ```bash
    omarchy plugin validate .
    /usr/lib/qt6/bin/qmllint -I "$OMARCHY_PATH/shell" Panel.qml   # not on PATH by default
-   bash -n setup.sh enable-keyboard.sh status.sh
+   bash -n status.sh system/omarchy-predatorsense-ph31552-helper packaging/helper/PKGBUILD
+   python3 -m unittest discover -s tests -v
    ```
-4. If you touch `setup.sh`'s privileged helper, keep every verb an explicit
+4. If you touch anything in `system/`, keep every helper verb an explicit
    whitelist match (`case ... in known-value) ...; *) exit 2 ;; esac`) — never
-   pass user/QML input straight into a shell command. This is what keeps a
-   passwordless-feeling `pkexec` action safe to ship.
+   pass user/QML input straight into a shell command. The plugin must never
+   run a file from its own checkout as root: privileged code only reaches the
+   system through `packaging/helper`. After changing `system/`, push the
+   commit, then update `_commit` and `sha256sums` in `packaging/helper/PKGBUILD`
+   to that commit (`tests/test_packaging.py` enforces the checksums).
 5. Open a PR describing what you tested and on what hardware.
 
 ## Project layout
@@ -48,9 +52,11 @@ sysfs paths and ACPI hotkey behavior vary enough between vendors that
 | `Panel.qml` | Bar icon + popup panel (all UI) |
 | `Model.js` | Pure JS: JSON parsing, label/icon lookups — no QML types |
 | `status.sh` | Read-only status snapshot (sysfs/systemctl reads, no privilege) |
-| `setup.sh` | One-time privileged setup, run via the panel's own button (`pkexec`) |
-| `enable-keyboard.sh` | One-time `acer_wmi` → `linuwu_sense` module swap, same button pattern |
+| `system/omarchy-predatorsense-ph31552-helper` | Root-owned, verb-whitelisted helper (installed by the package) |
+| `system/facer.py` | PH315-52 facer RGB/fan bridge, run by the helper |
+| `system/*.policy`, `system/*.service` | polkit action and optional boot-restore unit |
+| `packaging/helper/PKGBUILD` | Installs the files above from a pinned, checksummed commit |
 | `assets/predator-mask.png` | Recolorable logo (white silhouette, alpha background) |
 
 See `README.md`'s "How it works" section for the polkit-based privilege model
-before changing anything that touches `/usr/local/bin/omarchy-predatorsense-ph31552-helper`.
+before changing anything that touches `/usr/bin/omarchy-predatorsense-ph31552-helper`.

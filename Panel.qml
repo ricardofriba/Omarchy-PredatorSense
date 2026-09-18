@@ -12,10 +12,12 @@ import "Model.js" as Model
 // from an old walker-menu extension (omarchy/extensions/menu.sh) into a
 // proper bar-widget plugin for the omarchy-shell era.
 //
-// Privileged writes go through /usr/local/bin/omarchy-predatorsense-ph31552-helper, a
+// Privileged writes go through /usr/bin/omarchy-predatorsense-ph31552-helper, a
 // root-owned, verb-whitelisted script authorized via a polkit action scoped
-// to that exact binary (see setup.sh and README.md) — no sudoers file, no
-// passwordless-sudo rule. Every control here degrades gracefully when that
+// to that exact binary — no sudoers file, no passwordless-sudo rule. Both are
+// installed by the predatorsense-ph31552-helper pacman package (see
+// packaging/helper and README.md); the plugin itself never elevates anything
+// from its own user-writable checkout. Every control here degrades gracefully when that
 // helper — or the optional envycontrol / linuwu-sense-dkms backends — isn't
 // installed: read-only status still shows, writes just no-op.
 Panel {
@@ -24,6 +26,7 @@ Panel {
   ipcTarget: "io.github.ricardofriba.predatorsense"
 
   readonly property string pluginDir: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.ricardofriba.predatorsense"
+  readonly property string helperPath: "/usr/bin/omarchy-predatorsense-ph31552-helper"
   property var status: Model.parseStatus("")
   property string activeTab: "general"
   property bool showAdvanced: false
@@ -56,16 +59,16 @@ Panel {
   // Fire-and-forget a privileged verb through the helper, then refresh once
   // the write has had time to land. `bar.run` is the shared fire-and-forget
   // exec every bar widget uses. pkexec matches the helper's exact path
-  // against the polkit action installed by setup.sh, so this prompts via the
-  // normal graphical auth dialog (once per auth_admin_keep window, not per
-  // click) rather than needing a passwordless-sudo rule. If setup.sh hasn't run
-  // yet, pkexec still prompts (via the generic exec action) rather than
-  // silently failing — the setup banner's own button is the one-time
-  // exception that installs the helper in the first place.
+  // against the polkit action shipped in the helper package, so this prompts
+  // via the normal graphical auth dialog (once per auth_admin_keep window, not
+  // per click) rather than needing a passwordless-sudo rule. Until the package
+  // is installed there is no helper to run, so writes are skipped and the
+  // setup banner explains how to install it.
   function runPrivileged() {
+    if (!root.status.helperOk) return
     var args = Array.prototype.slice.call(arguments)
     var quoted = args.map(function(a) { return Util.shellQuote(String(a)) })
-    runPlain("pkexec /usr/local/bin/omarchy-predatorsense-ph31552-helper " + quoted.join(" "))
+    runPlain("pkexec " + Util.shellQuote(root.helperPath) + " " + quoted.join(" "))
     refreshTimer.restart()
   }
 
@@ -75,23 +78,19 @@ Panel {
     actionProc.running = true
   }
 
-  // One-time privileged setup, triggered from the UI — never a terminal.
-  // pkexec here uses the generic exec action (no specific policy exists
-  // yet, since installing it is exactly this script's job) and prompts
-  // through the same graphical dialog.
-  function runSetup() {
-    root.bar.run("pkexec bash " + Util.shellQuote(root.pluginDir + "/setup.sh")
+  // The helper is installed by the user from a terminal as a normal pacman
+  // package (its PKGBUILD pins the reviewed files to an exact commit and
+  // checksums). The panel only copies the command — it never runs anything
+  // as root on the user's behalf.
+  readonly property string helperInstallCommand: "cd " + Util.shellQuote(root.pluginDir + "/packaging/helper") + " && makepkg -si"
+
+  function copySetupCommand() {
+    root.bar.run("printf '%s' " + Util.shellQuote(root.helperInstallCommand) + " | wl-copy"
       + " && omarchy-notification-send -u low " + Util.shellQuote("PredatorSense")
-      + " " + Util.shellQuote("Privileged controls enabled"))
-    refreshTimer.restart()
+      + " " + Util.shellQuote("Install command copied — paste it into a terminal"))
   }
 
-  function runEnableKeyboard() {
-    root.bar.run("pkexec bash " + Util.shellQuote(root.pluginDir + "/enable-keyboard.sh")
-      + " && omarchy-notification-send -u low " + Util.shellQuote("PredatorSense")
-      + " " + Util.shellQuote("Keyboard RGB driver loaded"))
-    refreshTimer.restart()
-  }
+  function runEnableKeyboard() { runPrivileged("linuwu-enable") }
 
   function setPreset(name) {
     runPrivileged("profile", name, root.status.themeHex)
@@ -99,8 +98,9 @@ Panel {
 
   function setPowerProfile(name) {
     runPlain("powerprofilesctl set " + Util.shellQuote(name)
-      + " && pkexec /usr/local/bin/omarchy-predatorsense-ph31552-helper turbo "
-      + (name === "power-saver" ? "off" : "on"))
+      + (root.status.helperOk
+        ? " && pkexec " + Util.shellQuote(root.helperPath) + " turbo " + (name === "power-saver" ? "off" : "on")
+        : ""))
   }
 
   function setThermal(name) { runPrivileged("platform-profile", name) }
@@ -128,7 +128,7 @@ Panel {
   function setKbEffect(mode) { runPrivileged("kb-effect", mode, "5", "100", "1", root.status.themeHex) }
   // Stateful, unlike a one-shot color pick: while linked, the keyboard color
   // is re-applied by the helper on every future profile change too (see
-  // setup.sh's kb-link verb). Picking any plain color swatch or effect
+  // the helper's kb-link verb). Picking any plain color swatch or effect
   // clears this server-side, which is why those don't need a matching
   // client-side call here. Clicking an already-active link button toggles
   // it back off.
@@ -376,20 +376,20 @@ Panel {
               Text {
                 width: parent.width
                 wrapMode: Text.WordWrap
-                text: "Power/CPU/GPU/battery/keyboard controls are read-only until privileged access is enabled. One click, no terminal — you'll get a normal password prompt."
+                text: "Power/CPU/fan/battery/keyboard controls are read-only until the privileged helper package is installed. Copy the command below, paste it into a terminal, and review the package before pacman asks for your password. See the README for details."
                 color: Qt.darker(root.bar.foreground, 1.3)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.bodySmall
               }
               Button {
-                text: "Enable privileged controls"
+                text: "Copy install command"
                 fontSize: Style.font.bodySmall
                 foreground: root.bar.foreground
                 fontFamily: root.bar.fontFamily
                 horizontalPadding: Style.spacing.sm
                 verticalPadding: Style.spacing.controlPaddingY
                 bordered: true
-                onClicked: root.runSetup()
+                onClicked: root.copySetupCommand()
               }
             }
           }
@@ -768,13 +768,13 @@ Panel {
               wrapMode: Text.WordWrap
               text: root.status.kbPkgInstalled
                 ? "linuwu-sense-dkms is installed, but its driver isn't loaded yet — the stock acer_wmi driver got there first at boot."
-                : "4-zone keyboard RGB needs linuwu-sense-dkms (AUR) — not installed. Controls below no-op until it is."
+                : "Keyboard RGB needs the facer driver (PH315-52, see README) or linuwu-sense-dkms (AUR). Controls below no-op until one is loaded."
               color: Qt.darker(root.bar.foreground, 1.6)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.bodySmall
             }
             Button {
-              visible: root.status.kbPkgInstalled
+              visible: root.status.kbPkgInstalled && root.status.helperOk
               text: "Enable keyboard RGB now"
               fontSize: Style.font.bodySmall
               foreground: root.bar.foreground

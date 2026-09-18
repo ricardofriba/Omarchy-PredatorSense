@@ -93,7 +93,7 @@ kb_available=false
 [[ -n "$(kb_base)" || -e /dev/acer-gkbbl-0 ]] && kb_available=true
 
 # Distinguish "package not installed" from "installed but module not loaded"
-# so the panel can offer a one-click fix (pkexec enable-keyboard.sh) instead
+# so the panel can offer a one-click fix (the helper's linuwu-enable verb) instead
 # of just telling the user to go install something they already have.
 kb_pkg_installed=false
 pacman -Qq linuwu-sense-dkms >/dev/null 2>&1 && kb_pkg_installed=true
@@ -107,11 +107,11 @@ theme_hex="$(grep -m1 '^accent' "$HOME/.local/state/omarchy/current/theme/colors
 [[ -z $theme_hex ]] && theme_hex="ffffff"
 
 # Privileged writes go through pkexec + a polkit action scoped to this exact
-# binary (see setup.sh) — no passwordless-sudo rule, so there's nothing to
-# probe non-interactively. Existence is the readiness signal: this file only
-# exists once our own setup.sh has installed it.
+# binary — no passwordless-sudo rule, so there's nothing to probe
+# non-interactively. Existence is the readiness signal: both files are
+# installed by the predatorsense-ph31552-helper package (packaging/helper).
 helper_ok=false
-[[ -x /usr/local/bin/omarchy-predatorsense-ph31552-helper && -f /usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy ]] && helper_ok=true
+[[ -x /usr/bin/omarchy-predatorsense-ph31552-helper && -f /usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy ]] && helper_ok=true
 
 kb_link="$(cat /var/lib/omarchy-predatorsense-ph31552/kblink 2>/dev/null)"
 [[ $kb_link == theme || $kb_link == profile ]] || kb_link=off

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.ricardofriba.predatorsense",
   "name": "PredatorSense PH315-52",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "author": "ricardofriba (based on Rezwoan)",
   "license": "MIT",
   "description": "PredatorSense with PH315-52 facer RGB and WMI fan controls.",

@@ -1,0 +1,11 @@
+[Unit]
+Description=Restore last-selected PredatorSense power profile
+After=multi-user.target
+ConditionPathExists=/var/lib/omarchy-predatorsense-ph31552/profile
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/omarchy-predatorsense-ph31552-helper apply-saved
+
+[Install]
+WantedBy=multi-user.target

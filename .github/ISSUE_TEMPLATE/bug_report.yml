@@ -42,4 +42,4 @@ body:
       label: Checked first
       options:
         - label: I ran `omarchy restart shell` before concluding this is a real bug (not a stale hot-reload)
-        - label: I confirmed the helper is installed (the panel doesn't show the "Enable privileged controls" banner) if this is about a control not applying
+        - label: I confirmed the helper is installed (`pacman -Q predatorsense-ph31552-helper` succeeds and the panel shows no setup banner) if this is about a control not applying

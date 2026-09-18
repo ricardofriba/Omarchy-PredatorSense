@@ -1,27 +1,9 @@
 #!/bin/bash
-# One-time privileged setup for the Performance plugin's write path.
-# The plugin runs this itself via `pkexec` (its "Enable privileged
-# controls" button) — you should never need to open a terminal for this.
-#
-# Installs a root-owned, verb-whitelisted helper plus a polkit action scoped
-# to that one binary. No sudoers file, no passwordless-sudo rule: every privileged
-# click goes through `pkexec`, which prompts via the normal graphical
-# authentication dialog. polkit's `auth_admin_keep` on the registered action
-# means you authenticate once and it's remembered for a few minutes, not on
-# every single click. Without this script the panel still works read-only
-# (status is always plain sysfs reads); every write just no-ops until it's run.
-set -euo pipefail
-[[ $EUID -eq 0 ]] || { echo "This script must run as root (the plugin invokes it via pkexec)."; exit 1; }
-
-HELPER=/usr/local/bin/omarchy-predatorsense-ph31552-helper
-ACTION_ID=io.github.ricardofriba.predatorsense.helper
-
-install -d /usr/local/bin
-cat > "$HELPER" <<'HELPER'
-#!/bin/bash
-# omarchy-predatorsense-ph31552-helper — privileged applier for the Performance plugin.
-# Root-owned, invoked via a polkit action scoped to this exact path (see
-# io.github.ricardofriba.predatorsense.helper.policy). Accepts ONLY whitelisted verbs and
+# omarchy-predatorsense-ph31552-helper — privileged applier for the PredatorSense plugin.
+# Installed root-owned at /usr/bin by the predatorsense-ph31552-helper package
+# (packaging/helper) — the plugin never runs anything as root from its own
+# user-writable checkout. Invoked via a polkit action scoped to this exact path
+# (see io.github.ricardofriba.predatorsense.helper.policy). Accepts ONLY whitelisted verbs and
 # values, so it cannot be coerced into running arbitrary commands even
 # though polkit lets it run without an interactive shell.
 set -euo pipefail
@@ -44,7 +26,7 @@ esac
 if [[ -d /sys/module/facer ]]; then
   case "$cmd" in
     fan|kb-zone|kb-effect|kb-bright)
-      exec /usr/bin/python3 -I /usr/local/lib/omarchy-predatorsense-ph31552-facer.py "$@" ;;
+      exec /usr/bin/python3 -I /usr/lib/omarchy-predatorsense-ph31552/facer.py "$@" ;;
   esac
 fi
 
@@ -268,55 +250,12 @@ case "$cmd" in
     h="$(cat /var/lib/omarchy-predatorsense-ph31552/kbhex   2>/dev/null)" || h=ffffff
     [[ -n $p ]] || exit 0
     exec "$0" profile "$p" "$h" ;;
-  *) echo "usage: omarchy-predatorsense-ph31552-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|kb-link|brightness|profile|apply-saved} <value...>" >&2; exit 2 ;;
+  linuwu-enable) # hand the Acer WMI device from acer_wmi to an installed linuwu_sense (now and on future boots)
+    [[ -z $val ]] || exit 2
+    modinfo linuwu_sense >/dev/null 2>&1 || exit 3
+    printf 'blacklist acer_wmi\n' > /etc/modprobe.d/linuwu-sense.conf
+    printf 'linuwu_sense\n' > /etc/modules-load.d/linuwu-sense.conf
+    modprobe -r acer_wmi 2>/dev/null || true
+    modprobe linuwu_sense ;;
+  *) echo "usage: omarchy-predatorsense-ph31552-helper {turbo|cpu-cap|cpu-cores|power-limit|platform-profile|nvidia-powerd|battery-limit|fan|kb-zone|kb-effect|kb-bright|kb-link|brightness|profile|apply-saved|linuwu-enable} <value...>" >&2; exit 2 ;;
 esac
-HELPER
-install -Dm644 "$(dirname "$(readlink -f "$0")")/facer.py" /usr/local/lib/omarchy-predatorsense-ph31552-facer.py
-chown root:root /usr/local/lib/omarchy-predatorsense-ph31552-facer.py
-chmod 755 "$HELPER"
-chown root:root "$HELPER"
-echo "==> Installed $HELPER"
-
-install -d /usr/share/polkit-1/actions
-cat > "/usr/share/polkit-1/actions/$ACTION_ID.policy" <<POLICY
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD polkit Policy Configuration 1.0//EN"
- "http://www.freedesktop.org/software/polkit/policyconfig-1.dtd">
-<policyconfig>
-  <action id="$ACTION_ID">
-    <description>Apply Performance plugin power, CPU, GPU, battery, and keyboard settings</description>
-    <message>Authentication is required to change power, CPU, GPU, battery, or keyboard settings</message>
-    <icon_name>battery</icon_name>
-    <defaults>
-      <allow_any>no</allow_any>
-      <allow_inactive>no</allow_inactive>
-      <allow_active>auth_admin_keep</allow_active>
-    </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">$HELPER</annotate>
-    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
-  </action>
-</policyconfig>
-POLICY
-echo "==> Installed polkit action $ACTION_ID (auth_admin_keep — you authenticate once, not per click)"
-
-install -d -m 755 /var/lib/omarchy-predatorsense-ph31552
-chown root:root /var/lib/omarchy-predatorsense-ph31552
-
-cat > /etc/systemd/system/omarchy-predatorsense-ph31552-restore.service <<UNIT
-[Unit]
-Description=Restore last-selected Omarchy power profile
-After=multi-user.target
-ConditionPathExists=/var/lib/omarchy-predatorsense-ph31552/profile
-
-[Service]
-Type=oneshot
-ExecStart=$HELPER apply-saved
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-systemctl daemon-reload
-systemctl enable omarchy-predatorsense-ph31552-restore.service >/dev/null 2>&1 || true
-echo "==> Installed + enabled omarchy-predatorsense-ph31552-restore.service (remembers last profile across reboots)"
-echo
-echo "DONE. The Performance panel's controls go live immediately — no re-login needed."

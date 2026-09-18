@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 import unittest
 
-SOURCE = Path(__file__).resolve().parents[1] / 'setup.sh'
+SOURCE = Path(__file__).resolve().parents[1] / 'system' / 'omarchy-predatorsense-ph31552-helper'
 
 class FirstRun(unittest.TestCase):
     def run_helper(self, *args):
@@ -12,7 +12,7 @@ class FirstRun(unittest.TestCase):
             state = base / 'state'
             state.mkdir()
             helper = base / 'helper'
-            code = SOURCE.read_text().split("<<'HELPER'\n", 1)[1].split('\nHELPER\n', 1)[0]
+            code = SOURCE.read_text()
             # Redirect every hardware/state path; no real hardware writes.
             code = code.replace('/var/lib/omarchy-predatorsense-ph31552', str(state)).replace('/sys/', str(base / 'sys') + '/')
             helper.write_text(code)
@@ -37,6 +37,11 @@ class FirstRun(unittest.TestCase):
 
     def test_invalid_profile_is_rejected(self):
         result, state = self.run_helper('profile', 'invalid')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(state, {})
+
+    def test_linuwu_enable_takes_no_arguments(self):
+        result, state = self.run_helper('linuwu-enable', 'extra')
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertEqual(state, {})
 

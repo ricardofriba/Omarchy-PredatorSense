@@ -4,3 +4,9 @@ packaging/facer/src/
 packaging/facer/pkg/
 packaging/facer/*.pkg.tar.*
 packaging/facer/facer.c
+packaging/helper/src/
+packaging/helper/pkg/
+packaging/helper/*.pkg.tar.*
+packaging/helper/omarchy-predatorsense-ph31552-*
+packaging/helper/facer.py
+packaging/helper/io.github.ricardofriba.predatorsense.helper.policy
