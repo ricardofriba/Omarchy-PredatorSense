@@ -1,0 +1,34 @@
+pkgname=predatorsense-ph31552-helper
+pkgver=1.3.0
+pkgrel=1
+pkgdesc='Root-owned, verb-restricted polkit helper for the PredatorSense PH315-52 Omarchy plugin'
+arch=('any')
+url='https://github.com/ricardofriba/Omarchy-PredatorSense'
+license=('MIT')
+depends=('bash' 'polkit' 'python' 'systemd' 'kmod')
+optdepends=('predator-facer-dkms: PH315-52 keyboard RGB and WMI fan control (packaging/facer)'
+            'linuwu-sense-dkms: keyboard RGB, fan and charge limit on other Predator models'
+            'power-profiles-daemon: power profile switching'
+            'envycontrol: GPU mode switching')
+install=predatorsense-ph31552-helper.install
+# Every privileged file is fetched from this exact, reviewed commit and
+# verified by checksum; nothing is taken from the plugin's own checkout.
+_commit=93de05d1083a8ca920f7f48df7d6bab060e69f8e
+_raw="https://raw.githubusercontent.com/ricardofriba/Omarchy-PredatorSense/$_commit/system"
+source=("omarchy-predatorsense-ph31552-helper::$_raw/omarchy-predatorsense-ph31552-helper"
+        "facer.py::$_raw/facer.py"
+        "io.github.ricardofriba.predatorsense.helper.policy::$_raw/io.github.ricardofriba.predatorsense.helper.policy"
+        "omarchy-predatorsense-ph31552-restore.service::$_raw/omarchy-predatorsense-ph31552-restore.service")
+sha256sums=('f7ca8980b6975f21a5bcfaa424ef3f4c56f9ceddc6740c34c75cd71e1f67ba24'
+            '047777e65f33f9f2cd6f8cf410da22fb5c4ebeccb0087334d04bbebda15cb9a9'
+            '9eec78dc16ffc90eaa8b093df1515153e1f397400919994823410fce74d82429'
+            'ab6fe792e7f315455e04c888052eccf04feee1b0182a8eb9db157b8fe388b9f0')
+package() {
+  install -Dm755 omarchy-predatorsense-ph31552-helper "$pkgdir/usr/bin/omarchy-predatorsense-ph31552-helper"
+  install -Dm644 facer.py "$pkgdir/usr/lib/omarchy-predatorsense-ph31552/facer.py"
+  install -Dm644 io.github.ricardofriba.predatorsense.helper.policy \
+    "$pkgdir/usr/share/polkit-1/actions/io.github.ricardofriba.predatorsense.helper.policy"
+  install -Dm644 omarchy-predatorsense-ph31552-restore.service \
+    "$pkgdir/usr/lib/systemd/system/omarchy-predatorsense-ph31552-restore.service"
+  install -dm755 "$pkgdir/var/lib/omarchy-predatorsense-ph31552"
+}

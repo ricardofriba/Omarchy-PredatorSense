@@ -1,0 +1,5 @@
+post_install() {
+  echo '==> PredatorSense controls are now available from the panel.'
+  echo '==> Optional: restore the last preset at boot with'
+  echo '    sudo systemctl enable omarchy-predatorsense-ph31552-restore.service'
+}
